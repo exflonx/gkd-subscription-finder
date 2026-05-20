@@ -106,6 +106,27 @@ def check_stop_description(desc):
     return any(kw in desc_lower for kw in STOP_KW)
 
 
+def build_sub_urls(full_name, repo):
+    """Generate possible subscription URLs for a GKD repo.
+    Returns (primary_url, [all_candidates])."""
+    branch = repo.get("default_branch", "main")
+    owner = full_name.split("/")[0]
+    raw_base = f"https://raw.githubusercontent.com/{full_name}/{branch}"
+
+    candidates = [
+        f"{raw_base}/dist/gkd.json5",
+        f"{raw_base}/gkd.json5",
+        f"{raw_base}/dist/subscription.json5",
+        f"{raw_base}/subscription.json5",
+        f"{raw_base}/dist/{owner}_gkd.json5",
+    ]
+    npm_name = full_name.split("/")[-1]
+    npmmirror_url = f"https://registry.npmmirror.com/@{owner}/{npm_name}/latest/files"
+    candidates.append(npmmirror_url)
+
+    return candidates[0], candidates
+
+
 def main():
     cutoff_date = (datetime.now(timezone.utc) - timedelta(days=INACTIVE_DAYS)).strftime("%Y-%m-%d")
 
@@ -211,27 +232,6 @@ def main():
         print(f"  {full_name:<42} [>{INACTIVE_DAYS}d ago] pushed={pushed}  {desc}")
 
     # -------- Build subscription URLs --------
-    def build_sub_urls(full_name, repo):
-        """Generate possible subscription URLs for a GKD repo."""
-        branch = repo.get("default_branch", "main")
-        owner = full_name.split("/")[0]
-        raw_base = f"https://raw.githubusercontent.com/{full_name}/{branch}"
-
-        # Common file paths, ordered by likelihood
-        candidates = [
-            f"{raw_base}/dist/gkd.json5",
-            f"{raw_base}/gkd.json5",
-            f"{raw_base}/dist/subscription.json5",
-            f"{raw_base}/subscription.json5",
-            f"{raw_base}/dist/{owner}_gkd.json5",
-        ]
-        # npmmirror fallback
-        npm_name = full_name.split("/")[-1]
-        npmmirror_url = f"https://registry.npmmirror.com/@{owner}/{npm_name}/latest/files"
-        candidates.append(npmmirror_url)
-
-        return candidates[0], candidates
-
     # Print subscription URLs
     print(f"\n{'='*30} SUBSCRIPTION URLs ({len(active)}) {'='*30}")
     sub_links = []  # collect primary links for .txt export

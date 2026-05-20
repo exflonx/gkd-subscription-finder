@@ -2,3 +2,5 @@ __pycache__/
 *.py[cod]
 *.pyo
 .DS_Store
+gkd_active_repos.json
+gkd_subscription_links.txt
